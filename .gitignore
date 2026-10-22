@@ -1,0 +1,6 @@
+client.key
+*.key
+*.pem
+__pycache__/
+*.pyc
+*.log

